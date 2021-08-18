@@ -16,8 +16,8 @@
 //
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.Web.UI;
+
 using Rock.Communication;
 using Rock.Reporting;
 using Rock.Web.UI.Controls;
@@ -25,11 +25,95 @@ using Rock.Web.UI.Controls;
 namespace Rock.Field.Types
 {
     /// <summary>
-    /// Field used to save and display an email address
+    /// Field used to save and display an email address with optional confirmation
     /// </summary>
     [Serializable]
     public class EmailFieldType : FieldType
     {
+        #region Configuration
+
+        private const string ENABLE_CONFIRMATION = "enableconfirmation";
+
+        /// <summary>
+        /// Returns a list of the configuration keys
+        /// </summary>
+        /// <returns></returns>
+        public override List<string> ConfigurationKeys()
+        {
+            var configKeys = base.ConfigurationKeys();
+            configKeys.Add( ENABLE_CONFIRMATION );
+            return configKeys;
+        }
+
+        /// <summary>
+        /// Creates the HTML controls required to configure this type of field
+        /// </summary>
+        /// <returns></returns>
+        public override List<Control> ConfigurationControls()
+        {
+            var controls = base.ConfigurationControls();
+
+            // Add checkbox for deciding if we should ask the user to type their email twice
+            var cbEnableConfirmation = new RockCheckBox();
+            controls.Add( cbEnableConfirmation );
+            cbEnableConfirmation.AutoPostBack = true;
+            cbEnableConfirmation.CheckedChanged += OnQualifierUpdated;
+            cbEnableConfirmation.Label = "Enable Confirmation";
+            cbEnableConfirmation.Text = "Yes";
+
+            if ( EmailBox.ConfirmationAllowed() )
+            {
+                cbEnableConfirmation.Help = "When set, the user will be required to type their email a second time for confirmation.";
+            }
+            else
+            {
+                cbEnableConfirmation.Help = "Email confirmation is globally disabled by system configuration.";
+                cbEnableConfirmation.Enabled = false;
+            }
+
+            return controls;
+        }
+
+        /// <summary>
+        /// Gets the configuration value.
+        /// </summary>
+        /// <param name="controls">The controls.</param>
+        /// <returns></returns>
+        public override Dictionary<string, ConfigurationValue> ConfigurationValues(List<Control> controls)
+        {
+            var configurationValues = new Dictionary<string, ConfigurationValue>()
+            {
+                { ENABLE_CONFIRMATION, new ConfigurationValue( "false" ) }
+            };
+
+            if ( controls != null && controls.Count >= 1 && EmailBox.ConfirmationAllowed() )
+            {
+                RockCheckBox cbEnableConfirmation = controls[0] as RockCheckBox;
+                configurationValues[ENABLE_CONFIRMATION].Value = cbEnableConfirmation.Checked.ToString();
+            }
+
+            return configurationValues;
+        }
+
+        /// <summary>
+        /// Sets the configuration value.
+        /// </summary>
+        /// <param name="controls"></param>
+        /// <param name="configurationValues"></param>
+        public override void SetConfigurationValues(List<Control> controls, Dictionary<string, ConfigurationValue> configurationValues)
+        {
+            if ( controls != null && controls.Count >= 1 && configurationValues != null )
+            {
+                RockCheckBox cbEnableConfirmation = controls[0] as RockCheckBox;
+
+                if ( EmailBox.ConfirmationAllowed() && configurationValues.ContainsKey( ENABLE_CONFIRMATION ) )
+                {
+                    cbEnableConfirmation.Checked = configurationValues[ENABLE_CONFIRMATION].Value.AsBoolean();
+                }
+            }
+        }
+
+        #endregion
 
         #region Formatting
 
@@ -92,6 +176,7 @@ namespace Rock.Field.Types
             {
                 return string.Empty;
             }
+
             return value;
         }
 
@@ -122,7 +207,39 @@ namespace Rock.Field.Types
         /// </returns>
         public override Control EditControl( Dictionary<string, ConfigurationValue> configurationValues, string id )
         {
-            return new EmailBox { ID = id }; 
+            EmailBox eb = new EmailBox { ID = id };
+
+            if ( configurationValues != null )
+            {
+                if ( configurationValues.ContainsKey( ENABLE_CONFIRMATION ) && configurationValues[ENABLE_CONFIRMATION].Value.AsBoolean() )
+                {
+                    eb.EnableConfirmation = true;
+                }
+            }
+
+            return eb;
+        }
+
+        /// <summary>
+        /// Reads new values entered by the user for the field
+        /// </summary>
+        /// <param name="control">Parent control that controls were added to in the CreateEditControl() method</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <returns></returns>
+        public override string GetEditValue(Control control, Dictionary<string, ConfigurationValue> configurationValues)
+        {
+            return ( ( EmailBox ) control ).Text;
+        }
+
+        /// <summary>
+        /// Sets the value.
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="value">The value.</param>
+        public override void SetEditValue(Control control, Dictionary<string, ConfigurationValue> configurationValues, string value)
+        {
+            ( ( EmailBox ) control ).Text = value;
         }
 
         /// <summary>
@@ -138,10 +255,10 @@ namespace Rock.Field.Types
             {
                 var result = EmailAddressFieldValidator.Validate( value, allowMultipleAddresses: false, allowLava: false );
 
-                if ( result == EmailFieldValidationResultSpecifier.Valid )
-                { 
-                    message = "The email address provided is valid.";
-                    return true;
+                if ( result != EmailFieldValidationResultSpecifier.Valid )
+                {
+                    message = "The email address provided is not valid.";
+                    return false;
                 }
             }
 
@@ -162,10 +279,43 @@ namespace Rock.Field.Types
         /// <returns></returns>
         public override Control FilterValueControl( Dictionary<string, ConfigurationValue> configurationValues, string id, bool required, FilterMode filterMode )
         {
-            var control = new RockTextBox { ID = id };
-            control.ID = string.Format( "{0}_ctlCompareValue", id );
+            var control = new RockTextBox {
+                ID = string.Format( "{0}_ctlCompareValue", id )
+            };
             control.AddCssClass( "js-filter-control" );
             return control;
+        }
+
+        /// <summary>
+        /// Gets the filter value value.
+        /// </summary>
+        /// <param name="control">The filter value control.</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <returns></returns>
+        public override string GetFilterValueValue(Control control, Dictionary<string, ConfigurationValue> configurationValues)
+        {
+            if ( control is RockTextBox )
+            {
+                var tb = control as RockTextBox;
+                return tb.Text;
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Sets the filter value value.
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="value">The value.</param>
+        public override void SetFilterValueValue(Control control, Dictionary<string, ConfigurationValue> configurationValues, string value)
+        {
+            if ( control is RockTextBox )
+            {
+                var tb = control as RockTextBox;
+                tb.Text = value;
+            }
         }
 
         /// <summary>
@@ -174,15 +324,8 @@ namespace Rock.Field.Types
         /// <value>
         /// The type of the filter comparison.
         /// </value>
-        public override Model.ComparisonType FilterComparisonType
-        {
-            get
-            {
-                return ComparisonHelper.StringFilterComparisonTypes;
-            }
-        }
+        public override Model.ComparisonType FilterComparisonType => ComparisonHelper.StringFilterComparisonTypes;
 
         #endregion
-
     }
 }

@@ -246,5 +246,10 @@ namespace Rock.SystemKey
         /// Lava Engine Type.
         /// </summary>
         public const string LAVA_ENGINE_LIQUID_FRAMEWORK = "core_LavaEngine_LiquidFramework";
+
+        /// <summary>
+        /// Global killswitch for email confirmation
+        /// </summary>
+        public const string DISABLE_EMAIL_CONFIRMATION = "core_DisableEmailConfirmation";
     }
 }

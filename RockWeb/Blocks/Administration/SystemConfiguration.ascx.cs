@@ -150,6 +150,7 @@ namespace RockWeb.Blocks.Administration
             // Save General
             Rock.Web.SystemSettings.SetValue( SystemSetting.ENABLE_MULTI_TIME_ZONE_SUPPORT, cbEnableMultipleTimeZone.Checked.ToString() );
             Rock.Web.SystemSettings.SetValue( SystemSetting.ALWAYS_SHOW_BUSINESS_IN_PERSONPICKER, cbIncludeBusinessInPersonPicker.Checked.ToString() );
+            Rock.Web.SystemSettings.SetValue( SystemSetting.DISABLE_EMAIL_CONFIRMATION, cbDisableEmailConfirmation.Checked.ToString() );
 
             nbGeneralMessage.NotificationBoxType = NotificationBoxType.Success;
             nbGeneralMessage.Title = string.Empty;
@@ -217,6 +218,7 @@ namespace RockWeb.Blocks.Administration
         {
             cbEnableMultipleTimeZone.Checked = Rock.Web.SystemSettings.GetValue( SystemSetting.ENABLE_MULTI_TIME_ZONE_SUPPORT ).AsBoolean();
             cbIncludeBusinessInPersonPicker.Checked = Rock.Web.SystemSettings.GetValue( SystemSetting.ALWAYS_SHOW_BUSINESS_IN_PERSONPICKER ).AsBoolean();
+            cbDisableEmailConfirmation.Checked = Rock.Web.SystemSettings.GetValue( SystemSetting.DISABLE_EMAIL_CONFIRMATION ).AsBoolean();
         }
 
         /// <summary>

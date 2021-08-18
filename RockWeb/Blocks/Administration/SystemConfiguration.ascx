@@ -22,6 +22,11 @@
                             <Rock:RockCheckBox ID="cbIncludeBusinessInPersonPicker" runat="server" Label="Always Show Businesses in Person Picker" ValidationGroup="GeneralSetting" Help="When enabled, businesses will always be included in the search results of the person picker." />
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <Rock:RockCheckBox ID="cbDisableEmailConfirmation" runat="server" Label="Disable Email Confirmation" ValidationGroup="GeneralSetting" Help="When checked, this will disable the email confirmation feature at a system level." />
+                        </div>
+                    </div>
                     <div class="actions">
                         <Rock:BootstrapButton ID="btnGeneralSave" runat="server" CssClass="btn btn-primary" AccessKey="s" OnClick="btnGeneralSave_Click" Text="Save" DataLoadingText="Saving..." ValidationGroup="GeneralSetting"></Rock:BootstrapButton>
                     </div>
