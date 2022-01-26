@@ -50,12 +50,27 @@ namespace RockWeb.Blocks.Crm.PersonDetail
         Key = AttributeKey.ConnectionRequestDetail,
         Description = "The Connection Request Detail page.",
         Order = 1 )]
+
     [BooleanField(
         "Use Connection Request Detail Page From Connection Type",
         Key = AttributeKey.UseConnectionRequestDetailPageFromConnectionType,
         Description = "If enabled, the Connection Request Detail page defined by the Connection Type will be used to view the request(if it's not empty/unset). Otherwise the Connection Request Detail page configured on this block will be used.",
         DefaultBooleanValue = true,
         Order = 2 )]
+
+    [ConnectionTypesField(
+        "Include Connection Types",
+        Description = "Optional list of connection types to include in the display to (All will be displayed by default).",
+        IsRequired = false,
+        Order = 3,
+        Key = AttributeKey.IncludedConnectionTypes )]
+
+    [ConnectionTypesField(
+        "Exclude Connection Types",
+        Description = "Optional list of connection types to exclude from the display to (None will be excluded by default).",
+        IsRequired = false,
+        Order = 4,
+        Key = AttributeKey.ExcludedConnectionTypes )]
     public partial class ConnectionRequests : Rock.Web.UI.PersonBlock
     {
         #region Attribute Keys
@@ -64,6 +79,8 @@ namespace RockWeb.Blocks.Crm.PersonDetail
             public const string HideInactiveConnectionRequests = "HideInactive";
             public const string ConnectionRequestDetail = "ConnectionRequestDetail";
             public const string UseConnectionRequestDetailPageFromConnectionType = "UseConnectionRequestDetailPageFromConnectionType";
+            public const string IncludedConnectionTypes = "IncludedConnectionTypes";
+            public const string ExcludedConnectionTypes = "ExcludedConnectionTypes";
         }
         #endregion Attribute Keys
 
@@ -180,6 +197,8 @@ namespace RockWeb.Blocks.Crm.PersonDetail
             if ( Person != null && Person.Id > 0 )
             {
                 var hideInactive = GetAttributeValue( AttributeKey.HideInactiveConnectionRequests ).AsBoolean();
+                var includedConnectionTypeGuids = GetAttributeValue( AttributeKey.IncludedConnectionTypes ).SplitDelimitedValues().AsGuidList();
+                var excludedConnectionTypeGuids = GetAttributeValue( AttributeKey.ExcludedConnectionTypes ).SplitDelimitedValues().AsGuidList();
                 using ( var rockContext = new RockContext() )
                 {
                     var connectionTypeService = new ConnectionTypeService( rockContext );
@@ -211,6 +230,16 @@ namespace RockWeb.Blocks.Crm.PersonDetail
                             .Where( t => t.IsActive )
                             .Where( t => t.ConnectionState == ConnectionState.Active ||
                                             ( t.ConnectionState == ConnectionState.FutureFollowUp && t.FollowupDate.HasValue && t.FollowupDate.Value <= _midnightTomorrow ) );
+                    }
+
+                    if ( includedConnectionTypeGuids.Any() )
+                    {
+                        connectionTypesList = connectionTypesList.Where( t => includedConnectionTypeGuids.Contains( t.ConnectionOpportunity.ConnectionType.Guid ) );
+                    }
+
+                    if ( excludedConnectionTypeGuids.Any() )
+                    {
+                        connectionTypesList = connectionTypesList.Where( t => !excludedConnectionTypeGuids.Contains( t.ConnectionOpportunity.ConnectionType.Guid ) );
                     }
 
                     rConnectionTypes.DataSource = connectionTypesList
