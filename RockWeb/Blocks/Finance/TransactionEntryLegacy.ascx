@@ -57,7 +57,7 @@
                                             <Rock:DatePicker ID="dtpStartDate" runat="server" Label="First Gift" AutoPostBack="true" AllowPastDateSelection="false" OnTextChanged="btnFrequency_SelectionChanged" />
                                         </div>
 
-                                        <Rock:RockTextBox ID="txtCommentEntry" runat="server" Required="true" Label="Comment" />
+                                        <Rock:RockTextBox ID="txtCommentEntry" runat="server" Label="Comment" />
 
                                     </fieldset>
                                 </div>
