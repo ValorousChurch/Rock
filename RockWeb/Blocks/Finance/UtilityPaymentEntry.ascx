@@ -132,7 +132,7 @@
                                                 </div>
                                             </div>
                                             
-                                            <Rock:RockTextBox ID="txtCommentEntry" runat="server" Required="true" Label="Comment" />
+                                            <Rock:RockTextBox ID="txtCommentEntry" runat="server" Label="Comment" />
 
                                         </fieldset>
                                     </div>
