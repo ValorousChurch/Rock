@@ -100,7 +100,7 @@ public class Mailgun : IHttpHandler
         {
             mailgunRequestPayload.EventType = jObject["event-data"]["event"] != null ? ( string ) jObject["event-data"]["event"] : string.Empty;
             mailgunRequestPayload.EventTypeReason = jObject["event-data"]["reason"] != null ? ( string ) jObject["event-data"]["reason"] : string.Empty;
-            mailgunRequestPayload.XMailgunVariables = jObject["event-data"]["user-variables"] != null ? jObject["event-data"]["user-variables"].ToString( Formatting.None ) : string.Empty;
+            mailgunRequestPayload.XMailgunVariables = ( jObject["event-data"]["user-variables"] != null && jObject["event-data"]["user-variables"].Type != JTokenType.Null ) ? jObject["event-data"]["user-variables"].ToString( Formatting.None ) : string.Empty;
             mailgunRequestPayload.Ip = jObject["event-data"]["ip"] != null ? ( string ) jObject["event-data"]["ip"] : string.Empty;
             mailgunRequestPayload.Url = jObject["event-data"]["url"] != null ? ( string ) jObject["event-data"]["url"] : string.Empty;
             mailgunRequestPayload.Recipient = jObject["event-data"]["recipient"] != null ? ( string ) jObject["event-data"]["recipient"] : string.Empty;
@@ -113,7 +113,7 @@ public class Mailgun : IHttpHandler
                 mailgunRequestPayload.DeviceType = jObject["event-data"]["client-info"]["device-type"] != null ? ( string ) jObject["event-data"]["client-info"]["device-type"] : string.Empty;
             }
 
-            if ( jObject["event-data"]["user-variables"] != null && jObject["event-data"]["user-variables"]["X-Mailgun-Variables"] != null )
+            if ( jObject["event-data"]["user-variables"] != null && jObject["event-data"]["user-variables"].Type != JTokenType.Null && jObject["event-data"]["user-variables"]["X-Mailgun-Variables"] != null )
             {
                 string mailgunVariables = HttpContext.Current.Server.UrlDecode( mailgunRequestPayload.XMailgunVariables );
 
