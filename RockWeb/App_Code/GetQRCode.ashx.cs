@@ -18,6 +18,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Data.Entity;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -106,6 +108,26 @@ namespace RockWeb
                 var svgQRCode = new SvgQRCode( qrCodeData );
                 var svgXml = svgQRCode.GetGraphic( pixelsPerModule, foregroundColor, backgroundColor );
                 return svgXml.ToMemoryStream();
+            }
+            else if ( outputType.Equals( "logo", StringComparison.OrdinalIgnoreCase ) )
+            {
+                // Make sure the logo exists. Otherwise, just return a regurlar png.
+                var logoFile = HttpContext.Current.Server.MapPath( "~/App_Data/Files/logo.png" );
+                if ( !File.Exists( logoFile ) )
+                {
+                    return GetResponseStream( qrCodeData, "png", pixelsPerModule, backgroundColor, foregroundColor );
+                }
+
+                // For PNG, convert hex colors to byte arrays directly
+                var lightColor = HexToByteArray( backgroundColor );
+                var darkColor = HexToByteArray( foregroundColor );
+                var qrCode = new QRCode( qrCodeData );
+                var bmp = qrCode.GetGraphic( pixelsPerModule, Color.FromArgb( darkColor[0], darkColor[1], darkColor[2] ), Color.FromArgb( lightColor[0], lightColor[1], lightColor[2] ), ( Bitmap ) Bitmap.FromFile( logoFile ), 20, pixelsPerModule / 2 );
+                using ( var ms = new MemoryStream() )
+                {
+                    bmp.Save( ms, ImageFormat.Png );
+                    return new MemoryStream( ms.ToArray() );
+                }
             }
             else
             {
