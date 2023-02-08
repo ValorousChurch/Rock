@@ -18,6 +18,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Data.Entity;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -72,6 +74,18 @@ namespace RockWeb
 
                         var svgXml = svgQRCode.GetGraphic( pixelsPerModule );
                         responseStream = svgXml.ToMemoryStream();
+                    }
+                    else if ( outputType.Equals( "logo", StringComparison.OrdinalIgnoreCase ) )
+                    {
+                        context.Response.ContentType = "image/png";
+
+                        var qrCode = new QRCode( qrCodeData );
+                        var bmp = qrCode.GetGraphic( pixelsPerModule, Color.Black, Color.White, ( Bitmap ) Bitmap.FromFile( context.Server.MapPath( "~/App_Data/Files/logo.png" ) ), 20, pixelsPerModule / 2 );
+                        using ( var ms = new MemoryStream() )
+                        {
+                            bmp.Save( ms, ImageFormat.Png );
+                            responseStream = new MemoryStream( ms.ToArray() );
+                        }
                     }
                     else
                     {
