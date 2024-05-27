@@ -123,6 +123,13 @@
                                                 btnType="default"
                                                 :disabled="!isAutoSaveOn"
                                                 @click="onAddGroupMemberClicked">Add Group Member</RockButton>
+                                    <Toggle
+                                                label="Sort By"
+                                                trueText="First Name"
+                                                falseText="Last Name"
+                                                :modelValue="isSortByFirstName"
+                                                @update:modelValue="onSortBy"
+                                                formGroupClasses="mb-0 ml-3" />
                                 </div>
                             </div>
                         </div>
@@ -242,13 +249,14 @@
     import RockButton from "@Obsidian/Controls/rockButton.obs";
     import RockLabel from "@Obsidian/Controls/rockLabel.obs";
     import TextBox from "@Obsidian/Controls/textBox.obs";
+    import Toggle from "@Obsidian/Controls/toggle.obs";
     import TransitionVerticalCollapse from "@Obsidian/Controls/transitionVerticalCollapse.obs";
     import { GroupAttendanceDetailDateSelectionMode } from "@Obsidian/Enums/Blocks/Group/GroupAttendanceDetail/groupAttendanceDetailDateSelectionMode";
     import { GroupAttendanceDetailLocationSelectionMode } from "@Obsidian/Enums/Blocks/Group/GroupAttendanceDetail/groupAttendanceDetailLocationSelectionMode";
     import { GroupAttendanceDetailScheduleSelectionMode } from "@Obsidian/Enums/Blocks/Group/GroupAttendanceDetail/groupAttendanceDetailScheduleSelectionMode";
     import { AttendanceStatus } from "@Obsidian/Enums/Event/attendanceStatus";
     import { Guid } from "@Obsidian/Types";
-    import { onConfigurationValuesChanged, useConfigurationValues, useInvokeBlockAction, useReloadBlock } from "@Obsidian/Utility/block";
+    import { onConfigurationValuesChanged, useConfigurationValues, usePersonPreferences, useInvokeBlockAction, useReloadBlock } from "@Obsidian/Utility/block";
     import { RockDateTime } from "@Obsidian/Utility/rockDateTime";
     import { GroupAttendanceDetailAddPersonRequestBag } from "@Obsidian/ViewModels/Blocks/Group/GroupAttendanceDetail/groupAttendanceDetailAddPersonRequestBag";
     import { GroupAttendanceDetailAddPersonResponseBag } from "@Obsidian/ViewModels/Blocks/Group/GroupAttendanceDetail/groupAttendanceDetailAddPersonResponseBag";
@@ -272,6 +280,7 @@
 
     const config = ref(useConfigurationValues<GroupAttendanceDetailInitializationBox>());
     const invokeBlockAction = useInvokeBlockAction();
+    const preferences = usePersonPreferences().blockPreferences;
 
     type NullableListItemBags = ListItemBag | ListItemBag[] | null;
 
@@ -319,6 +328,7 @@
     const topic = ref<GroupAttendanceTopic | null>();
     const isNotesShown = ref<boolean>(false);
     const addPersonSelection = ref<ListItemBag | undefined>();
+    const isSortByFirstName = ref<boolean>(preferences.getValue("isSortByFristName") === "true");
 
     //#endregion
 
@@ -338,7 +348,12 @@
     });
     const panelTitle = computed(() => config.value.groupName ? `${config.value.groupName} Attendance` : "Group Attendance");
     const attendances = computed<GroupAttendanceDetailAttendanceBag[]>(() => config.value?.attendances ?? []);
-    const attendanceSortByDelegate = ref<AttendanceSortByDelegate>(createSortBy(sortByLastName, sortByFirstName));
+    const attendanceSortByDelegate = computed<AttendanceSortByDelegate>(() => {
+        if( isSortByFirstName.value === true ) {
+            return createSortBy(sortByFirstName, sortByLastName);
+        }
+        return createSortBy(sortByLastName, sortByFirstName);
+    });
     const attendanceFilterByDelegate = computed<AttendanceFilterByDelegate | null>(() => {
         const filtersToCheck = [campusFilter.value, searchFilter.value, rosterFilter.value, didAttendFilter.value];
         const filters = filtersToCheck.filter(filterToCheck => !filterToCheck.isFilter(NoFilter));
@@ -696,6 +711,16 @@
             // Turn on auto-save after the bindings are updated.
             nextTick(() => autoUpdateAttendanceOccurrenceTypeSwitch.on());
         }
+    }
+
+    /**
+     * Event handler for the sort by toggle being changed
+     */
+    async function onSortBy(value: boolean): Promise<void> {
+        isSortByFirstName.value = value;
+
+        preferences.setValue("isSortByFristName", value.toString());
+        await preferences.save();
     }
 
     //#endregion
