@@ -79,4 +79,4 @@ readdirSync(enumsPath).filter(d => statSync(path.join(enumsPath, d)).isDirectory
     }));
 });
 
-export default configs;
+module.exports = configs;
